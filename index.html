@@ -4,436 +4,539 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Genesis Invitational 2026 · Predictive Model</title>
-  <meta name="description" content="Data-driven predictive model for the 2026 Genesis Invitational at Riviera Country Club. Weighted strokes gained analysis across 10 categories." />
-
-  <!-- Favicon inline -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>" />
-
-  <!-- React + Babel via CDN (no build step needed) -->
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-
-  <!-- Recharts via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.min.js"></script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
     body {
       background: #080d18;
       color: #e2e8f0;
-      font-family: 'Georgia', 'Times New Roman', serif;
+      font-family: Georgia, 'Times New Roman', serif;
       min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
     }
-    input[type=range] {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 4px;
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: currentColor;
-      cursor: pointer;
-    }
-    input[type=range]::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: currentColor;
-      cursor: pointer;
-      border: none;
-    }
-    button { font-family: inherit; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0c1526; }
     ::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 3px; }
 
-    @media (max-width: 768px) {
-      .grid-two { grid-template-columns: 1fr !important; }
-      .hide-mobile { display: none !important; }
-      .nav-tabs { flex-wrap: wrap; gap: 4px !important; }
+    #header {
+      background: linear-gradient(90deg, #0f1f2d, #162436, #0f1f2d);
+      border-bottom: 1px solid rgba(168,139,84,0.25);
+      padding: 18px 28px;
+    }
+    #header-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1100px; margin: 0 auto; gap: 16px; flex-wrap: wrap;
+    }
+    .eyebrow { font-size: 10px; letter-spacing: 4px; color: #a88b54; text-transform: uppercase; margin-bottom: 3px; }
+    .site-title { font-size: 26px; font-weight: bold; color: #fff; }
+    .site-sub { font-size: 12px; color: #475569; margin-top: 2px; }
+
+    #nav { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-btn {
+      padding: 7px 16px; border-radius: 6px;
+      border: 1px solid rgba(148,163,184,0.15);
+      background: transparent; color: #475569; cursor: pointer;
+      font-size: 12px; letter-spacing: 1px; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .nav-btn.active { border-color: #a88b54; background: rgba(168,139,84,0.12); color: #a88b54; }
+
+    #main { max-width: 1100px; margin: 0 auto; padding: 22px 28px; }
+    .section-label { font-size: 11px; letter-spacing: 3px; color: #a88b54; text-transform: uppercase; margin-bottom: 14px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 360px; gap: 22px; }
+
+    .player-card {
+      margin-bottom: 8px; padding: 13px 16px; border-radius: 10px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.02);
+      transition: border-color 0.15s;
+    }
+    .player-card:hover { border-color: rgba(255,255,255,0.12); }
+    .card-row { display: flex; align-items: center; gap: 12px; }
+    .rank-badge {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: bold; flex-shrink: 0;
+    }
+    .card-body { flex: 1; min-width: 0; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; }
+    .player-name { font-size: 15px; font-weight: bold; color: #f1f5f9; }
+    .player-score { font-size: 17px; font-weight: bold; }
+
+    .mini-bars { display: flex; gap: 2px; margin-top: 5px; }
+    .mini-bar { flex: 1; height: 3px; border-radius: 2px; }
+
+    .chip-row { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+    .chip { background: rgba(255,255,255,0.04); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: #475569; }
+
+    .card-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); display: none; }
+    .card-detail.open { display: block; }
+    .detail-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
+    .detail-cat { text-align: center; }
+    .detail-cat-label { font-size: 10px; color: #475569; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+    .detail-cat-val { font-size: 15px; font-weight: bold; }
+    .raw-row { display: flex; gap: 14px; font-size: 11px; color: #475569; flex-wrap: wrap; }
+    .raw-row b { color: #e2e8f0; }
+
+    .panel { background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); padding: 18px; }
+
+    .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .bar-label { font-size: 11px; color: #94a3b8; width: 80px; text-align: right; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 18px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; font-size: 11px; font-weight: bold; color: rgba(0,0,0,0.75); }
+
+    .mini-row { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 6px; margin-bottom: 3px; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); }
+
+    .weight-row { margin-bottom: 14px; }
+    .weight-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .weight-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; vertical-align: middle; }
+    .weight-label { font-size: 13px; color: #94a3b8; }
+    .weight-val { font-size: 13px; font-weight: bold; }
+    input[type=range] { width: 100%; cursor: pointer; height: 4px; border-radius: 2px; outline: none; -webkit-appearance: none; appearance: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; background: currentColor; }
+    input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: none; }
+
+    .balance-bar { margin-bottom: 14px; padding: 7px 12px; border-radius: 6px; font-size: 12px; }
+    .balance-ok  { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); color: #22c55e; }
+    .balance-bad { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.25); color: #ef4444; }
+
+    .live-rank-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 14px; margin-bottom: 5px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); }
+    .live-rank-left { display: flex; gap: 10px; align-items: center; }
+    .live-badge { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+    .live-right { display: flex; align-items: center; gap: 10px; }
+    .live-bar-track { width: 100px; height: 5px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; }
+    .live-bar-fill { height: 100%; border-radius: 3px; }
+    .live-score { font-size: 14px; font-weight: bold; min-width: 34px; text-align: right; }
+
+    .reset-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(168,139,84,0.25); background: rgba(168,139,84,0.07); color: #a88b54; cursor: pointer; font-size: 11px; font-family: inherit; }
+
+    .player-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }
+    .pill { padding: 6px 13px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02); color: #64748b; cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.15s; }
+    .pill.active { border-color: #a88b54; background: rgba(168,139,84,0.12); color: #a88b54; }
+
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .compare-name { font-size: 21px; font-weight: bold; color: #f1f5f9; }
+    .compare-sub  { font-size: 13px; color: #475569; }
+
+    .cat-row { margin-bottom: 10px; }
+    .cat-header { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 12px; }
+    .cat-name { color: #64748b; }
+    .cat-val { font-weight: bold; }
+    .cat-track { height: 5px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; }
+    .cat-fill { height: 100%; border-radius: 3px; opacity: 0.8; }
+
+    .raw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 14px; font-size: 11px; }
+    .raw-cell { background: rgba(255,255,255,0.03); padding: 7px 10px; border-radius: 6px; }
+    .raw-cell-label { color: #475569; margin-bottom: 2px; }
+    .raw-cell-val { color: #e2e8f0; font-weight: bold; font-size: 14px; }
+
+    .hist-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; }
+    .hist-chip { padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
+
+    .placeholder { text-align: center; padding: 60px 0; color: #334155; font-size: 14px; }
+
+    footer { text-align: center; padding: 16px; color: #1a2535; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 20px; }
+
+    @media (max-width: 780px) {
+      .two-col, .compare-grid { grid-template-columns: 1fr; }
+      #header-inner { flex-direction: column; align-items: flex-start; }
+      #main { padding: 16px; }
     }
   </style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useMemo } = React;
-    const {
-      RadarChart, Radar, PolarGrid, PolarAngleAxis,
-      ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
-    } = Recharts;
+<div id="header">
+  <div id="header-inner">
+    <div>
+      <div class="eyebrow">2026 PGA Tour · Riviera Country Club · Pacific Palisades, CA</div>
+      <div class="site-title">Genesis Invitational</div>
+      <div class="site-sub">Predictive Model · 10-Category Weighted Strokes Gained Analysis</div>
+    </div>
+    <div id="nav">
+      <button class="nav-btn active" onclick="switchView('leaderboard')">Leaderboard</button>
+      <button class="nav-btn"        onclick="switchView('weights')">Weights</button>
+      <button class="nav-btn"        onclick="switchView('compare')">Compare</button>
+    </div>
+  </div>
+</div>
 
-    // ─── Player Data ───────────────────────────────────────────────────────────
-    const RAW_PLAYERS = [
-      {"name":"Scottie Scheffler","score_sg_ott":100.0,"score_sg_putt":70.32,"score_sg_app":68.59,"score_sg_arg":67.47,"score_sg_ttg":96.47,"score_masters":96.63,"score_torrey":null,"score_riviera":100,"score_par4":95.83,"score_random":68.43,"raw_sg_ott":1.026,"raw_sg_putt":0.703,"raw_sg_app":0.424,"raw_sg_arg":0.645,"raw_sg_ttg":2.094,"raw_par4":3.80,"riv2024":"N/A","riv2023":"-8","riv2022":"-12","riv2021":"N/A","masters2025":"T4"},
-      {"name":"Tommy Fleetwood","score_sg_ott":78.57,"score_sg_putt":62.88,"score_sg_app":77.16,"score_sg_arg":84.45,"score_sg_ttg":98.88,"score_masters":77.53,"score_torrey":null,"score_riviera":85,"score_par4":100.0,"score_random":56.22,"raw_sg_ott":0.351,"raw_sg_putt":0.403,"raw_sg_app":0.773,"raw_sg_arg":1.109,"raw_sg_ttg":2.234,"raw_par4":3.78,"riv2024":"N/A","riv2023":"-5","riv2022":"N/A","riv2021":"N/A","masters2025":"T21"},
-      {"name":"Rory McIlroy","score_sg_ott":66.67,"score_sg_putt":50.47,"score_sg_app":100.0,"score_sg_arg":55.07,"score_sg_ttg":94.61,"score_masters":100.0,"score_torrey":null,"score_riviera":88,"score_par4":95.83,"score_random":68.57,"raw_sg_ott":-0.024,"raw_sg_putt":-0.098,"raw_sg_app":1.703,"raw_sg_arg":0.306,"raw_sg_ttg":1.986,"raw_par4":3.80,"riv2024":"N/A","riv2023":"-4","riv2022":"-10","riv2021":"N/A","masters2025":"W"},
-      {"name":"Sepp Straka","score_sg_ott":85.33,"score_sg_putt":55.05,"score_sg_app":77.9,"score_sg_arg":70.33,"score_sg_ttg":96.4,"score_masters":null,"score_torrey":null,"score_riviera":72,"score_par4":68.75,"score_random":72.58,"raw_sg_ott":0.564,"raw_sg_putt":0.087,"raw_sg_app":0.803,"raw_sg_arg":0.723,"raw_sg_ttg":2.09,"raw_par4":3.93,"riv2024":"N/A","riv2023":"-1","riv2022":"-8","riv2021":"N/A","masters2025":"CUT"},
-      {"name":"Jason Day","score_sg_ott":73.4,"score_sg_putt":78.49,"score_sg_app":67.24,"score_sg_arg":60.34,"score_sg_ttg":77.73,"score_masters":92.13,"score_torrey":null,"score_riviera":90,"score_par4":77.08,"score_random":42.71,"raw_sg_ott":0.188,"raw_sg_putt":1.033,"raw_sg_app":0.369,"raw_sg_arg":0.45,"raw_sg_ttg":1.007,"raw_par4":3.89,"riv2024":"N/A","riv2023":"-9","riv2022":"N/A","riv2021":"N/A","masters2025":"T8"},
-      {"name":"Si Woo Kim","score_sg_ott":90.19,"score_sg_putt":38.9,"score_sg_app":93.32,"score_sg_arg":49.4,"score_sg_ttg":100.0,"score_masters":null,"score_torrey":null,"score_riviera":55,"score_par4":85.42,"score_random":38.7,"raw_sg_ott":0.717,"raw_sg_putt":-0.565,"raw_sg_app":1.431,"raw_sg_arg":0.151,"raw_sg_ttg":2.299,"raw_par4":3.85,"riv2024":"N/A","riv2023":"CUT","riv2022":"T3","riv2021":"N/A","masters2025":"N/A"},
-      {"name":"Patrick Cantlay","score_sg_ott":71.52,"score_sg_putt":53.84,"score_sg_app":79.94,"score_sg_arg":55.29,"score_sg_ttg":83.26,"score_masters":60.67,"score_torrey":null,"score_riviera":92,"score_par4":81.25,"score_random":58.46,"raw_sg_ott":0.129,"raw_sg_putt":0.038,"raw_sg_app":0.886,"raw_sg_arg":0.312,"raw_sg_ttg":1.328,"raw_par4":3.87,"riv2024":"N/A","riv2023":"-14","riv2022":"-5","riv2021":"N/A","masters2025":"T36"},
-      {"name":"Shane Lowry","score_sg_ott":77.94,"score_sg_putt":75.5,"score_sg_app":78.17,"score_sg_arg":37.21,"score_sg_ttg":76.97,"score_masters":53.93,"score_torrey":null,"score_riviera":87,"score_par4":100.0,"score_random":23.48,"raw_sg_ott":0.331,"raw_sg_putt":0.912,"raw_sg_app":0.814,"raw_sg_arg":-0.182,"raw_sg_ttg":0.963,"raw_par4":3.78,"riv2024":"N/A","riv2023":"-7","riv2022":"N/A","riv2021":"N/A","masters2025":"T42"},
-      {"name":"Hideki Matsuyama","score_sg_ott":53.33,"score_sg_putt":62.83,"score_sg_app":86.54,"score_sg_arg":73.47,"score_sg_ttg":86.56,"score_masters":77.53,"score_torrey":null,"score_riviera":80,"score_par4":70.83,"score_random":35.76,"raw_sg_ott":-0.444,"raw_sg_putt":0.401,"raw_sg_app":1.155,"raw_sg_arg":0.809,"raw_sg_ttg":1.519,"raw_par4":3.92,"riv2024":"W","riv2023":"CUT","riv2022":"-17","riv2021":"N/A","masters2025":"T21"},
-      {"name":"Will Zalatoris","score_sg_ott":83.56,"score_sg_putt":52.43,"score_sg_app":72.96,"score_sg_arg":54.77,"score_sg_ttg":84.64,"score_masters":null,"score_torrey":null,"score_riviera":82,"score_par4":79.17,"score_random":24.79,"raw_sg_ott":0.508,"raw_sg_putt":-0.019,"raw_sg_app":0.602,"raw_sg_arg":0.298,"raw_sg_ttg":1.408,"raw_par4":3.88,"riv2024":"N/A","riv2023":"-13","riv2022":"-6","riv2021":"N/A","masters2025":"CUT"},
-      {"name":"Collin Morikawa","score_sg_ott":84.25,"score_sg_putt":37.98,"score_sg_app":86.96,"score_sg_arg":44.09,"score_sg_ttg":89.81,"score_masters":85.39,"score_torrey":null,"score_riviera":95,"score_par4":70.83,"score_random":35.9,"raw_sg_ott":0.53,"raw_sg_putt":-0.602,"raw_sg_app":1.172,"raw_sg_arg":0.006,"raw_sg_ttg":1.708,"raw_par4":3.92,"riv2024":"N/A","riv2023":"-11","riv2022":"-17","riv2021":"N/A","masters2025":"T14"},
-      {"name":"Russell Henley","score_sg_ott":67.65,"score_sg_putt":64.07,"score_sg_app":77.73,"score_sg_arg":49.73,"score_sg_ttg":76.97,"score_masters":null,"score_torrey":null,"score_riviera":70,"score_par4":79.17,"score_random":60.9,"raw_sg_ott":0.007,"raw_sg_putt":0.451,"raw_sg_app":0.796,"raw_sg_arg":0.16,"raw_sg_ttg":0.963,"raw_par4":3.88,"riv2024":"N/A","riv2023":"CUT","riv2022":"-5","riv2021":"N/A","masters2025":"CUT"},
-      {"name":"Harris English","score_sg_ott":98.35,"score_sg_putt":62.51,"score_sg_app":58.64,"score_sg_arg":35.13,"score_sg_ttg":73.37,"score_masters":87.64,"score_torrey":null,"score_riviera":78,"score_par4":75.0,"score_random":33.21,"raw_sg_ott":0.974,"raw_sg_putt":0.388,"raw_sg_app":0.019,"raw_sg_arg":-0.239,"raw_sg_ttg":0.754,"raw_par4":3.90,"riv2024":"N/A","riv2023":"-8","riv2022":"N/A","riv2021":"N/A","masters2025":"T12"},
-      {"name":"Xander Schauffele","score_sg_ott":87.56,"score_sg_putt":62.64,"score_sg_app":61.08,"score_sg_arg":29.31,"score_sg_ttg":66.46,"score_masters":92.13,"score_torrey":null,"score_riviera":75,"score_par4":70.83,"score_random":69.76,"raw_sg_ott":0.634,"raw_sg_putt":0.393,"raw_sg_app":0.118,"raw_sg_arg":-0.398,"raw_sg_ttg":0.353,"raw_par4":3.92,"riv2024":"N/A","riv2023":"-3","riv2022":"-9","riv2021":"N/A","masters2025":"T8"},
-      {"name":"Jake Knapp","score_sg_ott":87.52,"score_sg_putt":78.82,"score_sg_app":65.4,"score_sg_arg":54.26,"score_sg_ttg":81.25,"score_masters":null,"score_torrey":null,"score_riviera":null,"score_par4":79.17,"score_random":27.94,"raw_sg_ott":0.633,"raw_sg_putt":1.046,"raw_sg_app":0.294,"raw_sg_arg":0.284,"raw_sg_ttg":1.211,"raw_par4":3.88,"riv2024":"N/A","riv2023":"N/A","riv2022":"N/A","riv2021":"N/A","masters2025":"N/A"},
-      {"name":"Maverick McNealy","score_sg_ott":77.52,"score_sg_putt":57.58,"score_sg_app":70.78,"score_sg_arg":52.43,"score_sg_ttg":78.73,"score_masters":65.17,"score_torrey":null,"score_riviera":85,"score_par4":72.92,"score_random":41.89,"raw_sg_ott":0.318,"raw_sg_putt":0.189,"raw_sg_app":0.513,"raw_sg_arg":0.234,"raw_sg_ttg":1.065,"raw_par4":3.91,"riv2024":"N/A","riv2023":"N/A","riv2022":"-12","riv2021":"N/A","masters2025":"T32"},
-      {"name":"Nicolai Højgaard","score_sg_ott":95.17,"score_sg_putt":67.2,"score_sg_app":76.13,"score_sg_arg":45.19,"score_sg_ttg":88.66,"score_masters":null,"score_torrey":null,"score_riviera":null,"score_par4":70.83,"score_random":33.67,"raw_sg_ott":0.874,"raw_sg_putt":0.577,"raw_sg_app":0.731,"raw_sg_arg":0.036,"raw_sg_ttg":1.641,"raw_par4":3.92,"riv2024":"N/A","riv2023":"N/A","riv2022":"N/A","riv2021":"N/A","masters2025":"CUT"},
-      {"name":"Rickie Fowler","score_sg_ott":71.08,"score_sg_putt":68.76,"score_sg_app":77.65,"score_sg_arg":30.95,"score_sg_ttg":69.96,"score_masters":null,"score_torrey":null,"score_riviera":65,"score_par4":81.25,"score_random":56.55,"raw_sg_ott":0.115,"raw_sg_putt":0.64,"raw_sg_app":0.793,"raw_sg_arg":-0.353,"raw_sg_ttg":0.556,"raw_par4":3.87,"riv2024":"N/A","riv2023":"-5","riv2022":"-2","riv2021":"N/A","masters2025":"N/A"},
-      {"name":"Justin Rose","score_sg_ott":70.13,"score_sg_putt":74.65,"score_sg_app":80.72,"score_sg_arg":28.54,"score_sg_ttg":70.44,"score_masters":98.88,"score_torrey":null,"score_riviera":null,"score_par4":83.33,"score_random":69.9,"raw_sg_ott":0.085,"raw_sg_putt":0.878,"raw_sg_app":0.918,"raw_sg_arg":-0.419,"raw_sg_ttg":0.584,"raw_par4":3.86,"riv2024":"W","riv2023":"N/A","riv2022":"N/A","riv2021":"N/A","masters2025":"T2"},
-      {"name":"Ryan Gerard","score_sg_ott":77.3,"score_sg_putt":71.06,"score_sg_app":78.02,"score_sg_arg":38.89,"score_sg_ttg":77.32,"score_masters":null,"score_torrey":null,"score_riviera":null,"score_par4":83.33,"score_random":51.05,"raw_sg_ott":0.311,"raw_sg_putt":0.733,"raw_sg_app":0.808,"raw_sg_arg":-0.136,"raw_sg_ttg":0.983,"raw_par4":3.86,"riv2024":"N/A","riv2023":"N/A","riv2022":"N/A","riv2021":"N/A","masters2025":"N/A"}
-    ];
+<div id="main">
+  <div id="view-leaderboard"></div>
+  <div id="view-weights"     style="display:none"></div>
+  <div id="view-compare"     style="display:none"></div>
+</div>
 
-    // ─── Config ────────────────────────────────────────────────────────────────
-    const DEFAULT_WEIGHTS = {
-      sg_ott:15, sg_putt:15, sg_app:12, sg_arg:11,
-      sg_ttg:11, masters:5, torrey:5, riviera:10, par4:11, random:5
-    };
+<footer>Genesis Invitational 2026 · Predictive Model · Data: PGA Tour Official Stats</footer>
 
-    const CATEGORIES = [
-      { key:"sg_ott",   label:"SG: Off the Tee",    shortLabel:"OTT",  color:"#f97316" },
-      { key:"sg_putt",  label:"SG: Putting",         shortLabel:"PUTT", color:"#8b5cf6" },
-      { key:"sg_app",   label:"SG: Approach",        shortLabel:"APP",  color:"#06b6d4" },
-      { key:"sg_arg",   label:"SG: Around Green",    shortLabel:"ARG",  color:"#10b981" },
-      { key:"sg_ttg",   label:"SG: Tee to Green",    shortLabel:"T2G",  color:"#f59e0b" },
-      { key:"masters",  label:"Augusta 2025",         shortLabel:"AUG",  color:"#ef4444" },
-      { key:"torrey",   label:"Torrey 2026",          shortLabel:"TOR",  color:"#64748b" },
-      { key:"riviera",  label:"Riviera History",      shortLabel:"RIV",  color:"#22c55e" },
-      { key:"par4",     label:"Par 4 Scoring",        shortLabel:"P4",   color:"#a78bfa" },
-      { key:"random",   label:"Randomness Factor",    shortLabel:"RND",  color:"#94a3b8" },
-    ];
+<script>
+const PLAYERS = [
+  {name:"Scottie Scheffler", score_sg_ott:100,   score_sg_putt:70.32, score_sg_app:68.59, score_sg_arg:67.47, score_sg_ttg:96.47, score_masters:96.63, score_torrey:null, score_riviera:100, score_par4:95.83, score_random:68.43, raw_sg_ott:1.026,  raw_sg_putt:0.703,  raw_sg_app:0.424,  raw_sg_arg:0.645,  raw_sg_ttg:2.094, raw_par4:3.80, riv2024:"N/A", riv2023:"-8",  riv2022:"-12", masters2025:"T4"},
+  {name:"Tommy Fleetwood",   score_sg_ott:78.57, score_sg_putt:62.88, score_sg_app:77.16, score_sg_arg:84.45, score_sg_ttg:98.88, score_masters:77.53, score_torrey:null, score_riviera:85,  score_par4:100,   score_random:56.22, raw_sg_ott:0.351,  raw_sg_putt:0.403,  raw_sg_app:0.773,  raw_sg_arg:1.109,  raw_sg_ttg:2.234, raw_par4:3.78, riv2024:"N/A", riv2023:"-5",  riv2022:"N/A", masters2025:"T21"},
+  {name:"Rory McIlroy",      score_sg_ott:66.67, score_sg_putt:50.47, score_sg_app:100,   score_sg_arg:55.07, score_sg_ttg:94.61, score_masters:100,   score_torrey:null, score_riviera:88,  score_par4:95.83, score_random:68.57, raw_sg_ott:-0.024, raw_sg_putt:-0.098, raw_sg_app:1.703,  raw_sg_arg:0.306,  raw_sg_ttg:1.986, raw_par4:3.80, riv2024:"N/A", riv2023:"-4",  riv2022:"-10", masters2025:"W"},
+  {name:"Sepp Straka",       score_sg_ott:85.33, score_sg_putt:55.05, score_sg_app:77.9,  score_sg_arg:70.33, score_sg_ttg:96.4,  score_masters:null,  score_torrey:null, score_riviera:72,  score_par4:68.75, score_random:72.58, raw_sg_ott:0.564,  raw_sg_putt:0.087,  raw_sg_app:0.803,  raw_sg_arg:0.723,  raw_sg_ttg:2.09,  raw_par4:3.93, riv2024:"N/A", riv2023:"-1",  riv2022:"-8",  masters2025:"CUT"},
+  {name:"Jason Day",         score_sg_ott:73.4,  score_sg_putt:78.49, score_sg_app:67.24, score_sg_arg:60.34, score_sg_ttg:77.73, score_masters:92.13, score_torrey:null, score_riviera:90,  score_par4:77.08, score_random:42.71, raw_sg_ott:0.188,  raw_sg_putt:1.033,  raw_sg_app:0.369,  raw_sg_arg:0.45,   raw_sg_ttg:1.007, raw_par4:3.89, riv2024:"N/A", riv2023:"-9",  riv2022:"N/A", masters2025:"T8"},
+  {name:"Si Woo Kim",        score_sg_ott:90.19, score_sg_putt:38.9,  score_sg_app:93.32, score_sg_arg:49.4,  score_sg_ttg:100,   score_masters:null,  score_torrey:null, score_riviera:55,  score_par4:85.42, score_random:38.7,  raw_sg_ott:0.717,  raw_sg_putt:-0.565, raw_sg_app:1.431,  raw_sg_arg:0.151,  raw_sg_ttg:2.299, raw_par4:3.85, riv2024:"N/A", riv2023:"CUT", riv2022:"T3",  masters2025:"N/A"},
+  {name:"Patrick Cantlay",   score_sg_ott:71.52, score_sg_putt:53.84, score_sg_app:79.94, score_sg_arg:55.29, score_sg_ttg:83.26, score_masters:60.67, score_torrey:null, score_riviera:92,  score_par4:81.25, score_random:58.46, raw_sg_ott:0.129,  raw_sg_putt:0.038,  raw_sg_app:0.886,  raw_sg_arg:0.312,  raw_sg_ttg:1.328, raw_par4:3.87, riv2024:"N/A", riv2023:"-14", riv2022:"-5",  masters2025:"T36"},
+  {name:"Shane Lowry",       score_sg_ott:77.94, score_sg_putt:75.5,  score_sg_app:78.17, score_sg_arg:37.21, score_sg_ttg:76.97, score_masters:53.93, score_torrey:null, score_riviera:87,  score_par4:100,   score_random:23.48, raw_sg_ott:0.331,  raw_sg_putt:0.912,  raw_sg_app:0.814,  raw_sg_arg:-0.182, raw_sg_ttg:0.963, raw_par4:3.78, riv2024:"N/A", riv2023:"-7",  riv2022:"N/A", masters2025:"T42"},
+  {name:"Hideki Matsuyama",  score_sg_ott:53.33, score_sg_putt:62.83, score_sg_app:86.54, score_sg_arg:73.47, score_sg_ttg:86.56, score_masters:77.53, score_torrey:null, score_riviera:80,  score_par4:70.83, score_random:35.76, raw_sg_ott:-0.444, raw_sg_putt:0.401,  raw_sg_app:1.155,  raw_sg_arg:0.809,  raw_sg_ttg:1.519, raw_par4:3.92, riv2024:"W",   riv2023:"CUT", riv2022:"-17", masters2025:"T21"},
+  {name:"Will Zalatoris",    score_sg_ott:83.56, score_sg_putt:52.43, score_sg_app:72.96, score_sg_arg:54.77, score_sg_ttg:84.64, score_masters:null,  score_torrey:null, score_riviera:82,  score_par4:79.17, score_random:24.79, raw_sg_ott:0.508,  raw_sg_putt:-0.019, raw_sg_app:0.602,  raw_sg_arg:0.298,  raw_sg_ttg:1.408, raw_par4:3.88, riv2024:"N/A", riv2023:"-13", riv2022:"-6",  masters2025:"CUT"},
+  {name:"Collin Morikawa",   score_sg_ott:84.25, score_sg_putt:37.98, score_sg_app:86.96, score_sg_arg:44.09, score_sg_ttg:89.81, score_masters:85.39, score_torrey:null, score_riviera:95,  score_par4:70.83, score_random:35.9,  raw_sg_ott:0.53,   raw_sg_putt:-0.602, raw_sg_app:1.172,  raw_sg_arg:0.006,  raw_sg_ttg:1.708, raw_par4:3.92, riv2024:"N/A", riv2023:"-11", riv2022:"-17", masters2025:"T14"},
+  {name:"Russell Henley",    score_sg_ott:67.65, score_sg_putt:64.07, score_sg_app:77.73, score_sg_arg:49.73, score_sg_ttg:76.97, score_masters:null,  score_torrey:null, score_riviera:70,  score_par4:79.17, score_random:60.9,  raw_sg_ott:0.007,  raw_sg_putt:0.451,  raw_sg_app:0.796,  raw_sg_arg:0.16,   raw_sg_ttg:0.963, raw_par4:3.88, riv2024:"N/A", riv2023:"CUT", riv2022:"-5",  masters2025:"CUT"},
+  {name:"Harris English",    score_sg_ott:98.35, score_sg_putt:62.51, score_sg_app:58.64, score_sg_arg:35.13, score_sg_ttg:73.37, score_masters:87.64, score_torrey:null, score_riviera:78,  score_par4:75,    score_random:33.21, raw_sg_ott:0.974,  raw_sg_putt:0.388,  raw_sg_app:0.019,  raw_sg_arg:-0.239, raw_sg_ttg:0.754, raw_par4:3.90, riv2024:"N/A", riv2023:"-8",  riv2022:"N/A", masters2025:"T12"},
+  {name:"Xander Schauffele", score_sg_ott:87.56, score_sg_putt:62.64, score_sg_app:61.08, score_sg_arg:29.31, score_sg_ttg:66.46, score_masters:92.13, score_torrey:null, score_riviera:75,  score_par4:70.83, score_random:69.76, raw_sg_ott:0.634,  raw_sg_putt:0.393,  raw_sg_app:0.118,  raw_sg_arg:-0.398, raw_sg_ttg:0.353, raw_par4:3.92, riv2024:"N/A", riv2023:"-3",  riv2022:"-9",  masters2025:"T8"},
+  {name:"Jake Knapp",        score_sg_ott:87.52, score_sg_putt:78.82, score_sg_app:65.4,  score_sg_arg:54.26, score_sg_ttg:81.25, score_masters:null,  score_torrey:null, score_riviera:null, score_par4:79.17, score_random:27.94, raw_sg_ott:0.633,  raw_sg_putt:1.046,  raw_sg_app:0.294,  raw_sg_arg:0.284,  raw_sg_ttg:1.211, raw_par4:3.88, riv2024:"N/A", riv2023:"N/A", riv2022:"N/A", masters2025:"N/A"},
+  {name:"Maverick McNealy",  score_sg_ott:77.52, score_sg_putt:57.58, score_sg_app:70.78, score_sg_arg:52.43, score_sg_ttg:78.73, score_masters:65.17, score_torrey:null, score_riviera:85,  score_par4:72.92, score_random:41.89, raw_sg_ott:0.318,  raw_sg_putt:0.189,  raw_sg_app:0.513,  raw_sg_arg:0.234,  raw_sg_ttg:1.065, raw_par4:3.91, riv2024:"N/A", riv2023:"N/A", riv2022:"-12", masters2025:"T32"},
+  {name:"Nicolai Hojgaard",  score_sg_ott:95.17, score_sg_putt:67.2,  score_sg_app:76.13, score_sg_arg:45.19, score_sg_ttg:88.66, score_masters:null,  score_torrey:null, score_riviera:null, score_par4:70.83, score_random:33.67, raw_sg_ott:0.874,  raw_sg_putt:0.577,  raw_sg_app:0.731,  raw_sg_arg:0.036,  raw_sg_ttg:1.641, raw_par4:3.92, riv2024:"N/A", riv2023:"N/A", riv2022:"N/A", masters2025:"CUT"},
+  {name:"Rickie Fowler",     score_sg_ott:71.08, score_sg_putt:68.76, score_sg_app:77.65, score_sg_arg:30.95, score_sg_ttg:69.96, score_masters:null,  score_torrey:null, score_riviera:65,  score_par4:81.25, score_random:56.55, raw_sg_ott:0.115,  raw_sg_putt:0.64,   raw_sg_app:0.793,  raw_sg_arg:-0.353, raw_sg_ttg:0.556, raw_par4:3.87, riv2024:"N/A", riv2023:"-5",  riv2022:"-2",  masters2025:"N/A"},
+  {name:"Justin Rose",       score_sg_ott:70.13, score_sg_putt:74.65, score_sg_app:80.72, score_sg_arg:28.54, score_sg_ttg:70.44, score_masters:98.88, score_torrey:null, score_riviera:null, score_par4:83.33, score_random:69.9,  raw_sg_ott:0.085,  raw_sg_putt:0.878,  raw_sg_app:0.918,  raw_sg_arg:-0.419, raw_sg_ttg:0.584, raw_par4:3.86, riv2024:"W",   riv2023:"N/A", riv2022:"N/A", masters2025:"T2"},
+  {name:"Ryan Gerard",       score_sg_ott:77.3,  score_sg_putt:71.06, score_sg_app:78.02, score_sg_arg:38.89, score_sg_ttg:77.32, score_masters:null,  score_torrey:null, score_riviera:null, score_par4:83.33, score_random:51.05, raw_sg_ott:0.311,  raw_sg_putt:0.733,  raw_sg_app:0.808,  raw_sg_arg:-0.136, raw_sg_ttg:0.983, raw_par4:3.86, riv2024:"N/A", riv2023:"N/A", riv2022:"N/A", masters2025:"N/A"},
+];
 
-    const MEDALS = ["#FFD700","#C0C0C0","#CD7F32","#818cf8","#818cf8","#818cf8","#818cf8","#818cf8","#818cf8","#818cf8"];
+const CATS = [
+  {key:"sg_ott",  label:"SG: Off the Tee",  short:"OTT",  color:"#f97316"},
+  {key:"sg_putt", label:"SG: Putting",       short:"PUTT", color:"#8b5cf6"},
+  {key:"sg_app",  label:"SG: Approach",      short:"APP",  color:"#06b6d4"},
+  {key:"sg_arg",  label:"SG: Around Green",  short:"ARG",  color:"#10b981"},
+  {key:"sg_ttg",  label:"SG: Tee to Green",  short:"T2G",  color:"#f59e0b"},
+  {key:"masters", label:"Augusta 2025",       short:"AUG",  color:"#ef4444"},
+  {key:"torrey",  label:"Torrey 2026",        short:"TOR",  color:"#64748b"},
+  {key:"riviera", label:"Riviera History",    short:"RIV",  color:"#22c55e"},
+  {key:"par4",    label:"Par 4 Scoring",      short:"P4",   color:"#a78bfa"},
+  {key:"random",  label:"Randomness Factor",  short:"RND",  color:"#94a3b8"},
+];
 
-    // ─── Score engine ──────────────────────────────────────────────────────────
-    function computeScores(players, weights) {
-      return players.map(p => {
-        let score = 0, used = 0;
-        CATEGORIES.forEach(({ key }) => {
-          const val = p[`score_${key}`];
-          const w = weights[key] / 100;
-          if (val != null) { score += val * w; used += w; }
-        });
-        return { ...p, computed: used > 0 ? score / used : 0 };
-      })
-      .sort((a, b) => b.computed - a.computed)
-      .map((p, i) => ({ ...p, rank: i + 1 }));
-    }
+const MEDALS     = ["#FFD700","#C0C0C0","#CD7F32","#818cf8","#818cf8","#818cf8","#818cf8","#818cf8","#818cf8","#818cf8"];
+const MEDAL_RGBA = ["255,215,0","192,192,192","205,127,50","129,140,248","129,140,248","129,140,248","129,140,248","129,140,248","129,140,248","129,140,248"];
 
-    // ─── Main App ──────────────────────────────────────────────────────────────
-    function App() {
-      const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
-      const [selected, setSelected]   = useState(null);
-      const [view, setView]           = useState("leaderboard");
+let weights = {sg_ott:15,sg_putt:15,sg_app:12,sg_arg:11,sg_ttg:11,masters:5,torrey:5,riviera:10,par4:11,random:5};
+const DEFAULTS = {...weights};
+let expanded = null;
+let compared = null;
+let view = "leaderboard";
 
-      const players        = useMemo(() => computeScores(RAW_PLAYERS, weights), [weights]);
-      const top10          = players.slice(0, 10);
-      const selectedPlayer = selected ? players.find(p => p.name === selected) : null;
-      const totalWeight    = Object.values(weights).reduce((a, b) => a + b, 0);
+function scored() {
+  return PLAYERS.map(p => {
+    let s = 0, used = 0;
+    CATS.forEach(c => {
+      const v = p["score_" + c.key];
+      const w = weights[c.key] / 100;
+      if (v != null) { s += v * w; used += w; }
+    });
+    return {...p, computed: used > 0 ? s / used : 0};
+  }).sort((a,b) => b.computed - a.computed).map((p,i) => ({...p, rank:i+1}));
+}
 
-      const radarData = selectedPlayer
-        ? CATEGORIES.map(c => ({ subject: c.shortLabel, value: selectedPlayer[`score_${c.key}`] ?? 0, fullMark: 100 }))
-        : [];
+function chipColor(v) {
+  if (!v || v === "N/A") return "#475569";
+  if (v === "CUT") return "#ef4444";
+  if (v === "W") return "#FFD700";
+  const n = parseInt(v);
+  return (!isNaN(n) && n < 0) ? "#22c55e" : "#64748b";
+}
 
-      const barData = top10.map(p => ({
-        name: p.name.split(' ').pop(),
-        full: p.name,
-        value: parseFloat(p.computed.toFixed(1))
-      }));
+function f(v, d=3) { return v == null ? "—" : Number(v).toFixed(d); }
 
-      const s = {
-        page:       { minHeight:"100vh", background:"linear-gradient(135deg,#080d18 0%,#0c1526 60%,#080d18 100%)" },
-        header:     { background:"linear-gradient(90deg,#0f1f2d,#162436,#0f1f2d)", borderBottom:"1px solid rgba(168,139,84,0.25)", padding:"18px 28px" },
-        headerInner:{ display:"flex", justifyContent:"space-between", alignItems:"center", maxWidth:1100, margin:"0 auto" },
-        eyebrow:    { fontSize:10, letterSpacing:4, color:"#a88b54", textTransform:"uppercase", marginBottom:3 },
-        title:      { fontSize:26, fontWeight:"bold", color:"#fff", letterSpacing:0.5 },
-        subtitle:   { fontSize:12, color:"#475569", marginTop:2 },
-        navBar:     { display:"flex", gap:6 },
-        navBtn:     (active) => ({ padding:"7px 16px", borderRadius:6, border:"1px solid", borderColor:active?"#a88b54":"rgba(148,163,184,0.15)", background:active?"rgba(168,139,84,0.12)":"transparent", color:active?"#a88b54":"#475569", cursor:"pointer", fontSize:12, letterSpacing:1, textTransform:"capitalize" }),
-        main:       { maxWidth:1100, margin:"0 auto", padding:"22px 28px" },
-        sectionLabel:{ fontSize:11, letterSpacing:3, color:"#a88b54", textTransform:"uppercase", marginBottom:14 },
-        card:       (active, i) => ({ marginBottom:8, padding:"13px 16px", borderRadius:10, cursor:"pointer", border:`1px solid ${active?MEDALS[i]:"rgba(255,255,255,0.05)"}`, background:active?`rgba(${i===0?"255,215,0":i===1?"192,192,192":i===2?"205,127,50":"129,140,248"},0.06)`:"rgba(255,255,255,0.02)", transition:"all 0.15s" }),
-        badge:      (i) => ({ width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", background:`rgba(${i===0?"255,215,0":i===1?"192,192,192":i===2?"205,127,50":"129,140,248"},0.1)`, border:`1.5px solid ${MEDALS[i]}`, fontSize:13, fontWeight:"bold", color:MEDALS[i], flexShrink:0 }),
-        panel:      { background:"rgba(255,255,255,0.02)", borderRadius:10, border:"1px solid rgba(255,255,255,0.05)", padding:18 },
-        miniRow:    { display:"flex", justifyContent:"space-between", padding:"6px 10px", borderRadius:6, marginBottom:3, background:"rgba(255,255,255,0.015)", border:"1px solid rgba(255,255,255,0.03)" },
-      };
+function switchView(v) {
+  view = v;
+  document.querySelectorAll(".nav-btn").forEach((b,i) => {
+    b.classList.toggle("active", ["leaderboard","weights","compare"][i] === v);
+  });
+  ["leaderboard","weights","compare"].forEach(n => {
+    document.getElementById("view-"+n).style.display = n === v ? "" : "none";
+  });
+  render();
+}
 
-      return (
-        <div style={s.page}>
-          {/* ── Header ── */}
-          <header style={s.header}>
-            <div style={s.headerInner}>
-              <div>
-                <div style={s.eyebrow}>2026 PGA Tour · Riviera Country Club · Pacific Palisades, CA</div>
-                <div style={s.title}>Genesis Invitational</div>
-                <div style={s.subtitle}>Predictive Model · 10-Category Weighted Strokes Gained Analysis</div>
-              </div>
-              <nav style={s.navBar} className="nav-tabs">
-                {["leaderboard","weights","compare"].map(v => (
-                  <button key={v} onClick={() => setView(v)} style={s.navBtn(view===v)}>{v}</button>
-                ))}
-              </nav>
-            </div>
-          </header>
+// ── LEADERBOARD ──────────────────────────────────────────────────────────────
+function renderLeaderboard() {
+  const players = scored();
 
-          <main style={s.main}>
+  const cards = players.slice(0,10).map((p,i) => {
+    const m = MEDALS[i], mr = MEDAL_RGBA[i];
+    const isOpen = expanded === p.name;
 
-            {/* ═══════════════════ LEADERBOARD ═══════════════════ */}
-            {view === "leaderboard" && (
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 360px", gap:22 }} className="grid-two">
+    const bars = CATS.slice(0,9).map(c => {
+      const v = p["score_"+c.key];
+      const bg = v != null ? c.color : "rgba(255,255,255,0.04)";
+      const op = v != null ? 0.45 + v/222 : 0.1;
+      return `<div class="mini-bar" style="background:${bg};opacity:${op}" title="${c.label}: ${v!=null?v.toFixed(0):'N/A'}"></div>`;
+    }).join("");
 
-                {/* Left: Top 10 */}
-                <div>
-                  <div style={s.sectionLabel}>Predicted Top 10 Finishers</div>
-                  {top10.map((player, i) => (
-                    <div key={player.name}
-                      onClick={() => setSelected(selected===player.name ? null : player.name)}
-                      style={s.card(selected===player.name, i)}>
-                      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                        <div style={s.badge(i)}>{i+1}</div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                            <span style={{ fontSize:15, fontWeight:"bold", color:"#f1f5f9" }}>{player.name}</span>
-                            <span style={{ fontSize:17, fontWeight:"bold", color:i<3?MEDALS[i]:"#818cf8" }}>{player.computed.toFixed(1)}</span>
-                          </div>
-                          {/* Category mini-bars */}
-                          <div style={{ display:"flex", gap:2, marginTop:5 }}>
-                            {CATEGORIES.slice(0,9).map(c => {
-                              const v = player[`score_${c.key}`];
-                              return <div key={c.key} title={`${c.label}: ${v?.toFixed(0)??"N/A"}`}
-                                style={{ flex:1, height:3, borderRadius:2, background:v!=null?c.color:"rgba(255,255,255,0.04)", opacity:v!=null?0.5+(v/200):0.1 }} />;
-                            })}
-                          </div>
-                          {/* Course history chips */}
-                          <div style={{ display:"flex", gap:6, marginTop:5, fontSize:11, color:"#475569", flexWrap:"wrap" }}>
-                            {[["'24",player.riv2024],["'23",player.riv2023],["'22",player.riv2022]].filter(([,v])=>v&&v!=="N/A").map(([yr,v])=>(
-                              <span key={yr} style={{ background:"rgba(255,255,255,0.04)", padding:"1px 5px", borderRadius:3 }}>
-                                Riv {yr}: <span style={{ color:v==="CUT"?"#ef4444":!isNaN(parseInt(v))&&parseInt(v)<0?"#22c55e":"#64748b" }}>{v}</span>
-                              </span>
-                            ))}
-                            {player.masters2025&&player.masters2025!=="N/A"&&player.masters2025!=="CUT"&&
-                              <span style={{ background:"rgba(255,255,255,0.04)", padding:"1px 5px", borderRadius:3 }}>
-                                Masters: <span style={{color:"#22c55e"}}>{player.masters2025}</span>
-                              </span>}
-                          </div>
-                        </div>
-                      </div>
+    const chips = [["'24",p.riv2024],["'23",p.riv2023],["'22",p.riv2022]]
+      .filter(([,v]) => v && v !== "N/A")
+      .map(([yr,v]) => `<span class="chip">Riv ${yr}: <span style="color:${chipColor(v)}">${v}</span></span>`)
+      .join("") +
+      (p.masters2025 && p.masters2025 !== "N/A"
+        ? `<span class="chip">Masters: <span style="color:${chipColor(p.masters2025)}">${p.masters2025}</span></span>` : "");
 
-                      {/* Expanded detail */}
-                      {selected===player.name && (
-                        <div style={{ marginTop:12, paddingTop:12, borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-                          <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:8, marginBottom:10 }}>
-                            {CATEGORIES.slice(0,9).map(c => {
-                              const v = player[`score_${c.key}`];
-                              return (
-                                <div key={c.key} style={{ textAlign:"center" }}>
-                                  <div style={{ fontSize:10, color:"#475569", letterSpacing:1, textTransform:"uppercase", marginBottom:2 }}>{c.shortLabel}</div>
-                                  <div style={{ fontSize:15, fontWeight:"bold", color:v!=null?c.color:"#1e293b" }}>{v!=null?v.toFixed(0):"—"}</div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div style={{ display:"flex", gap:14, fontSize:11, color:"#475569", flexWrap:"wrap" }}>
-                            <span>OTT: <b style={{color:"#e2e8f0"}}>{player.raw_sg_ott?.toFixed(3)}</b></span>
-                            <span>Putt: <b style={{color:"#e2e8f0"}}>{player.raw_sg_putt?.toFixed(3)}</b></span>
-                            <span>App: <b style={{color:"#e2e8f0"}}>{player.raw_sg_app?.toFixed(3)}</b></span>
-                            <span>ARG: <b style={{color:"#e2e8f0"}}>{player.raw_sg_arg?.toFixed(3)}</b></span>
-                            <span>Par4 Avg: <b style={{color:"#e2e8f0"}}>{player.raw_par4?.toFixed(2)}</b></span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+    const dCats = CATS.slice(0,9).map(c => {
+      const v = p["score_"+c.key];
+      return `<div class="detail-cat">
+        <div class="detail-cat-label">${c.short}</div>
+        <div class="detail-cat-val" style="color:${v!=null?c.color:'#1e293b'}">${v!=null?v.toFixed(0):"—"}</div>
+      </div>`;
+    }).join("");
 
-                {/* Right: Chart + 11–20 */}
-                <div>
-                  <div style={s.sectionLabel}>Score Distribution</div>
-                  <div style={{ ...s.panel, padding:14, marginBottom:18 }}>
-                    <ResponsiveContainer width="100%" height={255}>
-                      <BarChart data={barData} layout="vertical" margin={{left:8,right:28,top:0,bottom:0}}>
-                        <XAxis type="number" domain={[50,95]} tick={{fill:"#475569",fontSize:10}} />
-                        <YAxis type="category" dataKey="name" tick={{fill:"#94a3b8",fontSize:11}} width={76} />
-                        <Tooltip
-                          formatter={v => [v.toFixed(1),"Model Score"]}
-                          labelFormatter={l => barData.find(d=>d.name===l)?.full || l}
-                          contentStyle={{background:"#0c1526",border:"1px solid rgba(255,255,255,0.08)",borderRadius:6,fontSize:11}} />
-                        <Bar dataKey="value" radius={[0,4,4,0]}>
-                          {barData.map((_,i) => <Cell key={i} fill={i<3?MEDALS[i]:"#818cf8"} opacity={1-i*0.035} />)}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div style={{ fontSize:11, letterSpacing:3, color:"#334155", textTransform:"uppercase", marginBottom:8 }}>Contenders 11–20</div>
-                  {players.slice(10,20).map((p,i) => (
-                    <div key={p.name} style={s.miniRow}>
-                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                        <span style={{ color:"#334155", fontSize:12, width:18 }}>{i+11}</span>
-                        <span style={{ fontSize:13, color:"#94a3b8" }}>{p.name}</span>
-                      </div>
-                      <span style={{ fontSize:13, color:"#475569" }}>{p.computed.toFixed(1)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ═══════════════════ WEIGHTS ═══════════════════ */}
-            {view === "weights" && (
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:28 }} className="grid-two">
-                <div>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
-                    <div style={s.sectionLabel}>Adjust Category Weights</div>
-                    <button onClick={() => setWeights(DEFAULT_WEIGHTS)}
-                      style={{ padding:"5px 12px", borderRadius:6, border:"1px solid rgba(168,139,84,0.25)", background:"rgba(168,139,84,0.07)", color:"#a88b54", cursor:"pointer", fontSize:11 }}>
-                      Reset
-                    </button>
-                  </div>
-                  <div style={s.panel}>
-                    <div style={{ marginBottom:14, padding:"7px 12px", borderRadius:6, background:totalWeight===100?"rgba(34,197,94,0.08)":"rgba(239,68,68,0.08)", border:`1px solid ${totalWeight===100?"rgba(34,197,94,0.25)":"rgba(239,68,68,0.25)"}`, fontSize:12, color:totalWeight===100?"#22c55e":"#ef4444" }}>
-                      Total: <b>{totalWeight}%</b> {totalWeight!==100 ? `— ${Math.abs(100-totalWeight)}% ${totalWeight<100?"under":"over"}` : "✓ Perfectly balanced"}
-                    </div>
-                    {CATEGORIES.map(c => (
-                      <div key={c.key} style={{ marginBottom:14 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                            <div style={{ width:8, height:8, borderRadius:"50%", background:c.color }} />
-                            <span style={{ fontSize:13, color:"#94a3b8" }}>{c.label}</span>
-                          </div>
-                          <span style={{ fontSize:13, fontWeight:"bold", color:c.color }}>{weights[c.key]}%</span>
-                        </div>
-                        <input type="range" min="0" max="40" value={weights[c.key]}
-                          onChange={e => setWeights(prev => ({...prev, [c.key]: Number(e.target.value)}))}
-                          style={{ width:"100%", accentColor:c.color }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Live rankings */}
-                <div>
-                  <div style={s.sectionLabel}>Live Rankings</div>
-                  {players.slice(0,15).map((p,i) => (
-                    <div key={p.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 14px", marginBottom:5, borderRadius:8, background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.04)" }}>
-                      <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-                        <span style={{ width:22, height:22, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:"bold", background:`rgba(${i===0?"255,215,0":i===1?"192,192,192":i===2?"205,127,50":"129,140,248"},0.1)`, color:MEDALS[i] }}>{i+1}</span>
-                        <span style={{ fontSize:13, color:"#cbd5e1" }}>{p.name}</span>
-                      </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                        <div style={{ width:100, height:5, background:"rgba(255,255,255,0.04)", borderRadius:3, overflow:"hidden" }}>
-                          <div style={{ height:"100%", width:`${p.computed}%`, background:i<3?MEDALS[i]:"#818cf8", borderRadius:3, transition:"width 0.3s" }} />
-                        </div>
-                        <span style={{ fontSize:14, fontWeight:"bold", color:i<3?MEDALS[i]:"#818cf8", minWidth:34, textAlign:"right" }}>{p.computed.toFixed(1)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ═══════════════════ COMPARE ═══════════════════ */}
-            {view === "compare" && (
-              <div>
-                <div style={s.sectionLabel}>Player Deep Dive</div>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginBottom:22 }}>
-                  {players.slice(0,20).map(p => (
-                    <button key={p.name} onClick={() => setSelected(selected===p.name ? null : p.name)}
-                      style={{ padding:"6px 13px", borderRadius:20, border:`1px solid ${selected===p.name?"#a88b54":"rgba(255,255,255,0.07)"}`, background:selected===p.name?"rgba(168,139,84,0.12)":"rgba(255,255,255,0.02)", color:selected===p.name?"#a88b54":"#64748b", cursor:"pointer", fontSize:12 }}>
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-
-                {selectedPlayer ? (
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="grid-two">
-                    {/* Radar */}
-                    <div style={s.panel}>
-                      <div style={{ marginBottom:16 }}>
-                        <div style={{ fontSize:21, fontWeight:"bold", color:"#f1f5f9" }}>{selectedPlayer.name}</div>
-                        <div style={{ fontSize:13, color:"#475569" }}>Rank #{selectedPlayer.rank} · Score {selectedPlayer.computed.toFixed(2)}/100</div>
-                      </div>
-                      <ResponsiveContainer width="100%" height={270}>
-                        <RadarChart data={radarData}>
-                          <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                          <PolarAngleAxis dataKey="subject" tick={{fill:"#64748b",fontSize:11}} />
-                          <Radar dataKey="value" stroke="#a88b54" fill="#a88b54" fillOpacity={0.18} strokeWidth={2} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Breakdown */}
-                    <div style={s.panel}>
-                      <div style={{ fontSize:11, letterSpacing:3, color:"#475569", textTransform:"uppercase", marginBottom:14 }}>Category Scores</div>
-                      {CATEGORIES.map(c => {
-                        const v = selectedPlayer[`score_${c.key}`];
-                        return (
-                          <div key={c.key} style={{ marginBottom:10 }}>
-                            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3, fontSize:12 }}>
-                              <span style={{color:"#64748b"}}>{c.label}</span>
-                              <span style={{color:v!=null?c.color:"#1e293b",fontWeight:"bold"}}>{v!=null?v.toFixed(1):"N/A"}</span>
-                            </div>
-                            <div style={{ height:5, background:"rgba(255,255,255,0.04)", borderRadius:3, overflow:"hidden" }}>
-                              <div style={{ height:"100%", width:`${v??0}%`, background:v!=null?c.color:"transparent", borderRadius:3, opacity:0.75, transition:"width 0.4s" }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Raw stats grid */}
-                      <div style={{ marginTop:14, display:"grid", gridTemplateColumns:"1fr 1fr", gap:7, fontSize:11 }}>
-                        {[["SG OTT",selectedPlayer.raw_sg_ott?.toFixed(3)],["SG Putting",selectedPlayer.raw_sg_putt?.toFixed(3)],["SG Approach",selectedPlayer.raw_sg_app?.toFixed(3)],["SG ARG",selectedPlayer.raw_sg_arg?.toFixed(3)],["SG T2G",selectedPlayer.raw_sg_ttg?.toFixed(3)],["Par 4 Avg",selectedPlayer.raw_par4?.toFixed(2)]].map(([label,v]) => (
-                          <div key={label} style={{ background:"rgba(255,255,255,0.03)", padding:"7px 10px", borderRadius:6 }}>
-                            <div style={{color:"#475569",marginBottom:2}}>{label}</div>
-                            <div style={{color:"#e2e8f0",fontWeight:"bold",fontSize:14}}>{v??"—"}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* History chips */}
-                      <div style={{ marginTop:10, display:"flex", gap:6, flexWrap:"wrap", fontSize:11 }}>
-                        {[["Riv '24",selectedPlayer.riv2024],["Riv '23",selectedPlayer.riv2023],["Riv '22",selectedPlayer.riv2022],["Masters '25",selectedPlayer.masters2025]].map(([yr,v]) => (
-                          <div key={yr} style={{ padding:"4px 9px", borderRadius:6, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)" }}>
-                            <span style={{color:"#475569"}}>{yr}: </span>
-                            <span style={{color:v==="CUT"?"#ef4444":v&&v!=="N/A"&&!isNaN(parseInt(v))&&parseInt(v)<0?"#22c55e":"#64748b",fontWeight:"bold"}}>{v??"N/A"}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ textAlign:"center", padding:"60px 0", color:"#1e293b", fontSize:14 }}>
-                    Select a player above to view their full breakdown
-                  </div>
-                )}
-              </div>
-            )}
-          </main>
-
-          <footer style={{ textAlign:"center", padding:"16px", color:"#1a2535", fontSize:10, letterSpacing:2, textTransform:"uppercase" }}>
-            Genesis Invitational 2026 · Predictive Model · Data: PGA Tour Official Stats
-          </footer>
+    return `<div class="player-card" style="border-color:${isOpen?m:'rgba(255,255,255,0.05)'};background:${isOpen?`rgba(${mr},0.04)`:'rgba(255,255,255,0.02)'}" onclick="toggleCard('${p.name.replace(/'/g,"\\'")}')">
+      <div class="card-row">
+        <div class="rank-badge" style="border:1.5px solid ${m};color:${m};background:rgba(${mr},0.1)">${i+1}</div>
+        <div class="card-body">
+          <div class="card-top">
+            <span class="player-name">${p.name}</span>
+            <span class="player-score" style="color:${m}">${p.computed.toFixed(1)}</span>
+          </div>
+          <div class="mini-bars">${bars}</div>
+          <div class="chip-row">${chips}</div>
         </div>
-      );
-    }
+      </div>
+      <div class="card-detail${isOpen?' open':''}">
+        <div class="detail-grid">${dCats}</div>
+        <div class="raw-row">
+          <span>OTT: <b>${f(p.raw_sg_ott)}</b></span>
+          <span>Putt: <b>${f(p.raw_sg_putt)}</b></span>
+          <span>App: <b>${f(p.raw_sg_app)}</b></span>
+          <span>ARG: <b>${f(p.raw_sg_arg)}</b></span>
+          <span>Par4 Avg: <b>${f(p.raw_par4,2)}</b></span>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
 
-    // ─── Mount ─────────────────────────────────────────────────────────────────
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
-  </script>
+  const MIN_S = 50, MAX_S = 95;
+  const bars = players.slice(0,10).map((p,i) => {
+    const pct = Math.max(0, Math.min(100, (p.computed - MIN_S) / (MAX_S - MIN_S) * 100));
+    const color = i < 3 ? MEDALS[i] : "#818cf8";
+    const lastName = p.name.split(" ").slice(-1)[0];
+    return `<div class="bar-row">
+      <div class="bar-label">${lastName}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${color};opacity:${1-i*0.035}">${p.computed.toFixed(1)}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  const miniList = players.slice(10,20).map((p,i) =>
+    `<div class="mini-row">
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="color:#334155;font-size:12px;width:18px">${i+11}</span>
+        <span style="font-size:13px;color:#94a3b8">${p.name}</span>
+      </div>
+      <span style="font-size:13px;color:#475569">${p.computed.toFixed(1)}</span>
+    </div>`).join("");
+
+  document.getElementById("view-leaderboard").innerHTML = `
+    <div class="two-col">
+      <div>
+        <div class="section-label">Predicted Top 10 Finishers</div>
+        ${cards}
+      </div>
+      <div>
+        <div class="section-label">Score Distribution</div>
+        <div class="panel" style="padding:14px;margin-bottom:18px">${bars}</div>
+        <div style="font-size:11px;letter-spacing:3px;color:#334155;text-transform:uppercase;margin-bottom:8px">Contenders 11–20</div>
+        ${miniList}
+      </div>
+    </div>`;
+}
+
+function toggleCard(name) {
+  expanded = expanded === name ? null : name;
+  renderLeaderboard();
+}
+
+// ── WEIGHTS ───────────────────────────────────────────────────────────────────
+function renderWeights() {
+  const players = scored();
+  const total = Object.values(weights).reduce((a,b)=>a+b,0);
+  const ok = total === 100;
+
+  const sliders = CATS.map(c => `
+    <div class="weight-row">
+      <div class="weight-header">
+        <div><span class="weight-dot" style="background:${c.color}"></span><span class="weight-label">${c.label}</span></div>
+        <span class="weight-val" id="wv-${c.key}" style="color:${c.color}">${weights[c.key]}%</span>
+      </div>
+      <input type="range" min="0" max="40" value="${weights[c.key]}"
+        style="accent-color:${c.color}"
+        oninput="setWeight('${c.key}',this.value)">
+    </div>`).join("");
+
+  const live = players.slice(0,15).map((p,i) => {
+    const m = MEDALS[i], mr = MEDAL_RGBA[i];
+    return `<div class="live-rank-row">
+      <div class="live-rank-left">
+        <div class="live-badge" style="background:rgba(${mr},0.1);color:${m}">${i+1}</div>
+        <span style="font-size:13px;color:#cbd5e1">${p.name}</span>
+      </div>
+      <div class="live-right">
+        <div class="live-bar-track"><div class="live-bar-fill" style="width:${p.computed}%;background:${i<3?m:'#818cf8'}"></div></div>
+        <span class="live-score" style="color:${i<3?m:'#818cf8'}">${p.computed.toFixed(1)}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("view-weights").innerHTML = `
+    <div class="two-col">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <div class="section-label" style="margin:0">Adjust Category Weights</div>
+          <button class="reset-btn" onclick="resetWeights()">Reset</button>
+        </div>
+        <div class="panel">
+          <div class="balance-bar ${ok?'balance-ok':'balance-bad'}">
+            Total: <b>${total}%</b> ${ok ? '✓ Perfectly balanced' : `— ${Math.abs(100-total)}% ${total<100?'under':'over'}`}
+          </div>
+          ${sliders}
+        </div>
+      </div>
+      <div>
+        <div class="section-label">Live Rankings</div>
+        ${live}
+      </div>
+    </div>`;
+}
+
+function setWeight(key, val) {
+  weights[key] = Number(val);
+  const el = document.getElementById("wv-"+key);
+  if (el) el.textContent = val + "%";
+  renderWeights();
+}
+
+function resetWeights() {
+  weights = {...DEFAULTS};
+  renderWeights();
+}
+
+// ── COMPARE ───────────────────────────────────────────────────────────────────
+function renderCompare() {
+  const players = scored();
+
+  const pills = players.slice(0,20).map(p =>
+    `<button class="pill${compared===p.name?' active':''}" onclick="selectCompare('${p.name.replace(/'/g,"\\'")}')">
+      ${p.name}
+    </button>`).join("");
+
+  let detail = `<div class="placeholder">Select a player above to view their full breakdown</div>`;
+
+  if (compared) {
+    const p = players.find(x => x.name === compared);
+    if (p) {
+      const catBars = CATS.map(c => {
+        const v = p["score_"+c.key];
+        return `<div class="cat-row">
+          <div class="cat-header">
+            <span class="cat-name">${c.label}</span>
+            <span class="cat-val" style="color:${v!=null?c.color:'#1e293b'}">${v!=null?v.toFixed(1):'N/A'}</span>
+          </div>
+          <div class="cat-track"><div class="cat-fill" style="width:${v??0}%;background:${v!=null?c.color:'transparent'}"></div></div>
+        </div>`;
+      }).join("");
+
+      const rawGrid = [
+        ["SG OTT",f(p.raw_sg_ott)],["SG Putting",f(p.raw_sg_putt)],
+        ["SG Approach",f(p.raw_sg_app)],["SG ARG",f(p.raw_sg_arg)],
+        ["SG T2G",f(p.raw_sg_ttg)],["Par 4 Avg",f(p.raw_par4,2)]
+      ].map(([l,v]) => `<div class="raw-cell"><div class="raw-cell-label">${l}</div><div class="raw-cell-val">${v}</div></div>`).join("");
+
+      const hist = [["Riv '24",p.riv2024],["Riv '23",p.riv2023],["Riv '22",p.riv2022],["Masters '25",p.masters2025]]
+        .map(([yr,v]) => `<div class="hist-chip"><span>${yr}: </span><b style="color:${chipColor(v)}">${v??"N/A"}</b></div>`).join("");
+
+      detail = `<div class="compare-grid">
+        <div class="panel">
+          <div class="compare-name">${p.name}</div>
+          <div class="compare-sub" style="margin-bottom:12px">Rank #${p.rank} · Score ${p.computed.toFixed(2)}/100</div>
+          <canvas id="radar" width="300" height="270" style="display:block;margin:0 auto"></canvas>
+        </div>
+        <div class="panel">
+          <div style="font-size:11px;letter-spacing:3px;color:#475569;text-transform:uppercase;margin-bottom:14px">Category Scores</div>
+          ${catBars}
+          <div class="raw-grid">${rawGrid}</div>
+          <div class="hist-row">${hist}</div>
+        </div>
+      </div>`;
+    }
+  }
+
+  document.getElementById("view-compare").innerHTML = `
+    <div class="section-label">Player Deep Dive</div>
+    <div class="player-pills">${pills}</div>
+    ${detail}`;
+
+  if (compared) {
+    const p = players.find(x => x.name === compared);
+    if (p) setTimeout(() => drawRadar(p), 0);
+  }
+}
+
+function drawRadar(p) {
+  const canvas = document.getElementById("radar");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, R = Math.min(W,H)*0.36, n = CATS.length;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid rings
+  [0.25,0.5,0.75,1].forEach(f => {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = (i/n)*2*Math.PI - Math.PI/2;
+      const x = cx + Math.cos(a)*R*f, y = cy + Math.sin(a)*R*f;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(255,255,255,0.07)";
+    ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  // Spokes + labels
+  CATS.forEach((c,i) => {
+    const a = (i/n)*2*Math.PI - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(a)*R, cy+Math.sin(a)*R);
+    ctx.strokeStyle = "rgba(255,255,255,0.07)"; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle="#64748b"; ctx.font="10px Georgia,serif";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(c.short, cx+Math.cos(a)*(R+18), cy+Math.sin(a)*(R+18));
+  });
+
+  // Polygon
+  ctx.beginPath();
+  CATS.forEach((c,i) => {
+    const v = (p["score_"+c.key]??0)/100;
+    const a = (i/n)*2*Math.PI - Math.PI/2;
+    const x = cx+Math.cos(a)*R*v, y = cy+Math.sin(a)*R*v;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.fillStyle="rgba(168,139,84,0.18)"; ctx.fill();
+  ctx.strokeStyle="#a88b54"; ctx.lineWidth=2; ctx.stroke();
+
+  // Dots
+  CATS.forEach((c,i) => {
+    const v = (p["score_"+c.key]??0)/100;
+    const a = (i/n)*2*Math.PI - Math.PI/2;
+    ctx.beginPath();
+    ctx.arc(cx+Math.cos(a)*R*v, cy+Math.sin(a)*R*v, 3.5, 0, 2*Math.PI);
+    ctx.fillStyle=c.color; ctx.fill();
+  });
+}
+
+function selectCompare(name) {
+  compared = compared === name ? null : name;
+  renderCompare();
+}
+
+function render() {
+  if (view==="leaderboard") renderLeaderboard();
+  if (view==="weights")     renderWeights();
+  if (view==="compare")     renderCompare();
+}
+
+render();
+</script>
 </body>
 </html>
